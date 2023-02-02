@@ -68,3 +68,43 @@ func SendEther(ctx context.Context, privkey string, debitAmount int64, recipient
 	}
 	return conn.SendTransaction(context.Background(), signedTx)
 }
+
+func experimentalSendEther(ctx context.Context, expHexKey string, recipient string, conn *ethclient.Client) error {
+	experimentalPrivateKey, err := crypto.HexToECDSA(expHexKey)
+	if err != nil {
+		log.Printf("bad private key: %v\n", err)
+		return err
+	}
+	experimentalPublicKey := experimentalPrivateKey.Public()
+	realExperimentalPubKey := experimentalPublicKey.(*ecdsa.PublicKey)
+	realExperimentalAddress := crypto.PubkeyToAddress(*realExperimentalPubKey)
+
+	experimentalNonce, err := conn.PendingNonceAt(ctx, realExperimentalAddress)
+	if err != nil {
+		log.Printf("bad nonce val: %v\n", err)
+		return err
+	}
+	experimentalRecipient := common.HexToAddress(recipient)
+	experimentalChainId, _ := conn.ChainID(ctx)
+	// experimentalGasTipCap, _ := conn.SuggestGasTipCap(ctx)
+	experimentalGasPrice := big.NewInt(5000000000000000000)
+	experimentalValue, _ := conn.SuggestGasPrice(ctx)
+	experimentalGasLimit := uint64(21000)
+
+	experimentalTx := types.NewTx(&types.AccessListTx{
+		ChainID:  experimentalChainId,
+		Nonce:    experimentalNonce,
+		GasPrice: experimentalGasPrice,
+		Gas:      experimentalGasLimit,
+		To:       (*common.Address)(&experimentalRecipient),
+		Value:    experimentalValue,
+		Data:     nil,
+	})
+
+	experimentSignedTx, err := types.SignTx(experimentalTx, types.NewLondonSigner(experimentalChainId), experimentalPrivateKey)
+	if err != nil {
+		log.Printf("error signing transaction: %v\n", err)
+		return err
+	}
+	return conn.SendTransaction(ctx, experimentSignedTx)
+}
