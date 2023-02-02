@@ -20,5 +20,27 @@ func main() {
 		log.Printf("error fetching balances: %v", err)
 		return
 	}
-	fmt.Printf("balance: %d", getBalance)
+	fmt.Printf("balance: %d\n", getBalance)
+
+	txByHash, pending, err := client.TransactionByHash(context.Background(), common.HexToHash("0x74f6e6c8bef01a893c2f9d955513c736db999b07c6461bf3bc221e07ca8b511a"))
+	if err != nil {
+		log.Printf("error fetching transaction: %v\n", err)
+		return
+	}
+	if !pending {
+		if txByHash != nil {
+			fmt.Printf("txByHash chainID: %v\n", txByHash.ChainId())
+			fmt.Printf("txByHash Nonce: %v\n", txByHash.Nonce())
+		}
+	}
+
+	transactionReceipt, err := client.TransactionReceipt(context.Background(), common.HexToHash("0x74f6e6c8bef01a893c2f9d955513c736db999b07c6461bf3bc221e07ca8b511a"))
+	if err != nil {
+		log.Printf("receipt error: %v", err)
+		return
+	}
+	if transactionReceipt != nil {
+		fmt.Printf("tx status:%v", transactionReceipt.Status)
+		fmt.Printf("contract addr: %v", transactionReceipt.ContractAddress)
+	}
 }
