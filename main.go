@@ -1,8 +1,6 @@
-/**
-* Author : Jim(jimsamuel50@gmail.com)
-* Function: Custom ethereum protocol Library
-* Copyright(c) Jim Samuel 2023
- */
+// Copyright 2020 Jim Nnamdi. All rights reserved.
+// Use of this source code is governed by a MIT-style
+// license that can be found in the LICENSE file.
 
 package main
 

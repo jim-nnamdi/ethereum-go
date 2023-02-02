@@ -1,3 +1,7 @@
+// Copyright 2020 Jim Nnamdi. All rights reserved.
+// Use of this source code is governed by a MIT-style
+// license that can be found in the LICENSE file.
+
 package custom
 
 import (
@@ -13,14 +17,20 @@ import (
 )
 
 func SendEther(ctx context.Context, privkey string, debitAmount int64, recipient string, conn *ethclient.Client) error {
-	// ethereum uses the Elliptic curve digital
-	// signature algorithm
+
+	// Firstly we need a private key of the sender
+	// Which would help us generate a public key
+	// and corresponding public address.
 	privatekey, err := crypto.HexToECDSA(privkey)
 	if err != nil {
 		log.Println("privatekey error", err)
 		return err
 	}
-	// get the publickey from private key
+
+	// Generate the public key from the privatekey
+	// The private and public key work together
+	// Hash a transaction using the public key
+	// and read the information using the private.
 	pubkey := privatekey.Public()
 	publickey, ok := pubkey.(*ecdsa.PublicKey)
 	if !ok {
@@ -28,7 +38,9 @@ func SendEther(ctx context.Context, privkey string, debitAmount int64, recipient
 		return err
 	}
 
-	// get the address from the public key
+	// Get the address of the sender from the publickey
+	// This would be the address to which the Ether would
+	// be deducted from to be sent to the recipient
 	fromAddress := crypto.PubkeyToAddress(*publickey)
 	nonce, err := conn.PendingNonceAt(ctx, fromAddress)
 	if err != nil {
@@ -36,7 +48,8 @@ func SendEther(ctx context.Context, privkey string, debitAmount int64, recipient
 		return err
 	}
 
-	// amount to send
+	// Set other generic data values such as the amount
+	// and the gaslimit and the gasprice of the transaction
 	value := big.NewInt(debitAmount)
 	gaslimit := uint64(21000)
 	gasPrice, err := conn.SuggestGasPrice(ctx)
@@ -47,9 +60,11 @@ func SendEther(ctx context.Context, privkey string, debitAmount int64, recipient
 
 	chainID, _ := conn.ChainID(context.Background())
 	gasTip, _ := conn.SuggestGasTipCap(context.Background())
-
-	// address to send
 	toAddress := common.HexToAddress(recipient)
+
+	// initiate the transaction to be done using the
+	// NewTx interface that can be satisfied by the
+	// DynamicFeeTx and the AccessListTx
 	tx := types.NewTx(&types.DynamicFeeTx{
 		ChainID:   chainID,
 		Nonce:     nonce,
@@ -61,6 +76,9 @@ func SendEther(ctx context.Context, privkey string, debitAmount int64, recipient
 		Data:      nil,
 	})
 
+	// Sign the transaction finally using the NewLondonSigner
+	// to verify the transaction carried out on the initiated
+	// transactions.
 	signedTx, err := types.SignTx(tx, types.NewLondonSigner(chainID), privatekey)
 	if err != nil {
 		log.Printf("cannot sign transaction: %v\n", err)
@@ -86,7 +104,6 @@ func experimentalSendEther(ctx context.Context, expHexKey string, recipient stri
 	}
 	experimentalRecipient := common.HexToAddress(recipient)
 	experimentalChainId, _ := conn.ChainID(ctx)
-	// experimentalGasTipCap, _ := conn.SuggestGasTipCap(ctx)
 	experimentalGasPrice := big.NewInt(5000000000000000000)
 	experimentalValue, _ := conn.SuggestGasPrice(ctx)
 	experimentalGasLimit := uint64(21000)
