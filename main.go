@@ -40,7 +40,21 @@ func main() {
 		return
 	}
 	if transactionReceipt != nil {
-		fmt.Printf("tx status:%v", transactionReceipt.Status)
-		fmt.Printf("contract addr: %v", transactionReceipt.ContractAddress)
+		fmt.Printf("tx status:%v\n", transactionReceipt.Status)
+		fmt.Printf("contract addr: %v\n", transactionReceipt.ContractAddress)
+		fmt.Printf("txByHash blockno: %v\n", transactionReceipt.BlockNumber)
+	}
+
+	blockNumber, err := client.BlockByNumber(context.Background(), transactionReceipt.BlockNumber)
+	if err != nil {
+		log.Printf("cannot fetch block: %v\n", err)
+		return
+	}
+	for _, tx := range blockNumber.Transactions() {
+		if tx != nil {
+			fmt.Println("gas", tx.Gas())
+			fmt.Println("hash", tx.Hash())
+			fmt.Println("recipient", tx.To())
+		}
 	}
 }
