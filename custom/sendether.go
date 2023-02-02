@@ -7,24 +7,25 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-func SendEther(ctx context.Context, privkey string, debitAmount int64, recipient string, conn *ethclient.Client) {
+func SendEther(ctx context.Context, privkey string, debitAmount int64, recipient string, conn *ethclient.Client) error {
 	// ethereum uses the Elliptic curve digital
 	// signature algorithm
 	privatekey, err := crypto.HexToECDSA(privkey)
 	if err != nil {
 		log.Println("privatekey error", err)
-		return
+		return err
 	}
 	// get the publickey from private key
 	pubkey := privatekey.Public()
 	publickey, ok := pubkey.(*ecdsa.PublicKey)
 	if !ok {
-		log.Printf("error casting private key to public: %v\n")
-		return
+		log.Print("error casting private key to public\n")
+		return err
 	}
 
 	// get the address from the public key
@@ -32,7 +33,7 @@ func SendEther(ctx context.Context, privkey string, debitAmount int64, recipient
 	nonce, err := conn.PendingNonceAt(ctx, fromAddress)
 	if err != nil {
 		log.Printf("error fetching nonce: %v\n", err)
-		return
+		return err
 	}
 
 	// amount to send
@@ -41,11 +42,29 @@ func SendEther(ctx context.Context, privkey string, debitAmount int64, recipient
 	gasPrice, err := conn.SuggestGasPrice(ctx)
 	if err != nil {
 		log.Printf("no gas:%v\n", err)
-		return
+		return err
 	}
+
+	chainID, _ := conn.ChainID(context.Background())
+	gasTip, _ := conn.SuggestGasTipCap(context.Background())
 
 	// address to send
 	toAddress := common.HexToAddress(recipient)
+	tx := types.NewTx(&types.DynamicFeeTx{
+		ChainID:   chainID,
+		Nonce:     nonce,
+		GasTipCap: gasTip,
+		GasFeeCap: gasPrice,
+		Gas:       gaslimit,
+		To:        (*common.Address)(&toAddress),
+		Value:     value,
+		Data:      nil,
+	})
 
-	// WIP
+	signedTx, err := types.SignTx(tx, types.NewLondonSigner(chainID), privatekey)
+	if err != nil {
+		log.Printf("cannot sign transaction: %v\n", err)
+		return err
+	}
+	return conn.SendTransaction(context.Background(), signedTx)
 }
