@@ -4,14 +4,14 @@
 # Usage
 Clone or download the project and run ```sh metro-eth.sh``` in the terminal and watch the magic (this is only temporary as its still wip) after the development, the mode of running the project would change. the results would be as below.
 
-``` running metro's ethereum-library!
+``` 
+running metro's ethereum-library!
 go run main.go 
 tx status:1
 contract addr: 0x0000000000000000000000000000000000000000
 txByHash blockno: 16540021
 balance: 65904314473981728887
 
-----------------------------------------
 chain ID: 1receipient: 0xdAC17F958D2ee523a2206206994597C13D831ec7
 gasPrice: 16215758339
 chain ID: 1receipient: 0xdAC17F958D2ee523a2206206994597C13D831ec7
