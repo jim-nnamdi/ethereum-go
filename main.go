@@ -42,6 +42,8 @@ func main() {
 	}
 	fmt.Println("balance:", balance)
 
-	// fetch transactions from hash.
+	// fetch transactions from hash and also
+	// send experimental ethers!
 	custom.GetTransactions(context.Background(), transactionHashString, client)
+	custom.ExperimentalSendEther(context.Background(), "40e5c9765c8815c03c2d51e218d53f8cf5070ac67586941845720643cb16b6b9", "0x86fbd2d7e3dB411908666d234f9A6E7d3DBB38b9", client)
 }

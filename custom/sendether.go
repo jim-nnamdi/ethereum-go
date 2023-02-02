@@ -87,7 +87,7 @@ func SendEther(ctx context.Context, privkey string, debitAmount int64, recipient
 	return conn.SendTransaction(context.Background(), signedTx)
 }
 
-func experimentalSendEther(ctx context.Context, expHexKey string, recipient string, conn *ethclient.Client) error {
+func ExperimentalSendEther(ctx context.Context, expHexKey string, recipient string, conn *ethclient.Client) error {
 	experimentalPrivateKey, err := crypto.HexToECDSA(expHexKey)
 	if err != nil {
 		log.Printf("bad private key: %v\n", err)
@@ -123,5 +123,6 @@ func experimentalSendEther(ctx context.Context, expHexKey string, recipient stri
 		log.Printf("error signing transaction: %v\n", err)
 		return err
 	}
+	log.Printf("sending transaction from: %s", expHexKey)
 	return conn.SendTransaction(ctx, experimentSignedTx)
 }
