@@ -126,3 +126,66 @@ func ExperimentalSendEther(ctx context.Context, expHexKey string, recipient stri
 	log.Printf("sending transaction from: %s", expHexKey)
 	return conn.SendTransaction(ctx, experimentSignedTx)
 }
+
+func TestSendingEther() error {
+	conn, err := ethclient.Dial("https://mainnet.infura.io")
+	if err != nil {
+		log.Print("connection error")
+		return err
+	}
+	pkey, err := crypto.HexToECDSA("")
+	if err != nil {
+		log.Println("private key error", err)
+		return err
+	}
+	pukey := pkey.Public()
+	publickey := pukey.(*ecdsa.PublicKey)
+	fromAddress := crypto.PubkeyToAddress(*publickey)
+	toAddress := common.HexToAddress("recipient address")
+
+	nonce, err := conn.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		log.Print("error generating nonce", err)
+		return err
+	}
+
+	chainId, err := conn.ChainID(context.Background())
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	gasTipCap, err := conn.SuggestGasTipCap(context.Background())
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	gasFeeCap, err := conn.SuggestGasPrice(context.Background())
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	value := big.NewInt(9000000000000000000)
+	gasLimit := uint64(91000)
+
+	transaction := types.NewTx(&types.DynamicFeeTx{
+		ChainID:   chainId,
+		Nonce:     nonce,
+		GasTipCap: gasTipCap,
+		GasFeeCap: gasFeeCap,
+		Gas:       gasLimit,
+		To:        (*common.Address)(&toAddress),
+		Value:     value,
+		Data:      []byte{},
+	})
+
+	signTransaction, err := types.SignTx(transaction, types.NewLondonSigner(chainId), pkey)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	return conn.SendTransaction(context.Background(), signTransaction)
+}
