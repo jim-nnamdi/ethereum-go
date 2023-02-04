@@ -104,18 +104,25 @@ func ExperimentalSendEther(ctx context.Context, expHexKey string, recipient stri
 	}
 	experimentalRecipient := common.HexToAddress(recipient)
 	experimentalChainId, _ := conn.ChainID(ctx)
-	experimentalGasPrice := big.NewInt(5000000000000000000)
 	experimentalValue, _ := conn.SuggestGasPrice(ctx)
-	experimentalGasLimit := uint64(21000)
+	experimentalGasLimit := uint64(1)
 
-	experimentalTx := types.NewTx(&types.AccessListTx{
-		ChainID:  experimentalChainId,
-		Nonce:    experimentalNonce,
-		GasPrice: experimentalGasPrice,
-		Gas:      experimentalGasLimit,
-		To:       (*common.Address)(&experimentalRecipient),
-		Value:    experimentalValue,
-		Data:     nil,
+	gasTip, _ := conn.SuggestGasTipCap(context.Background())
+	gasPrice, err := conn.SuggestGasPrice(ctx)
+	if err != nil {
+		log.Printf("no gas:%v\n", err)
+		return err
+	}
+
+	experimentalTx := types.NewTx(&types.DynamicFeeTx{
+		ChainID:   experimentalChainId,
+		Nonce:     experimentalNonce,
+		GasTipCap: gasTip,
+		GasFeeCap: gasPrice,
+		Gas:       experimentalGasLimit,
+		To:        (*common.Address)(&experimentalRecipient),
+		Value:     experimentalValue,
+		Data:      nil,
 	})
 
 	experimentSignedTx, err := types.SignTx(experimentalTx, types.NewLondonSigner(experimentalChainId), experimentalPrivateKey)
